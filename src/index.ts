@@ -1,26 +1,28 @@
-import express from "express";
-import pool from "./config/db";
-import dotenv from 'dotenv';
-
+import dotenv from "dotenv";
 dotenv.config();
 
-const port = Number(process.env.PORT);
+import express from "express";
+import pool from "./config/db";
 
 const app = express();
+
 app.use(express.json());
 
-app.get("/test-db", async (req, res) => {
+app.get("/test-connection", async(req, res) => {
     try {
         const result = await pool.query("SELECT NOW()");
         res.json({
-            message: "Database connect",
-            time: result.rows[0],
+            message: "Postgres connection success!",
+            time: result.rows[0]
         })
     } catch (error) {
-        res.status(500).json({ error: "DB error"});
+        console.error("Failed to connect");
+        res.status(500).json({ error: "DB error", message: "Failed to connect"})
     }
 });
 
-app.listen(port, () => {
-    console.log("Server is running on", port);
+const apiPort = Number(process.env.PORT) || 5050;
+
+app.listen(apiPort, () => {
+    console.log("Server is running on http://localhost:", apiPort);
 })
