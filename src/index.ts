@@ -11,7 +11,7 @@ app.use(express.json());
 app.get("/test-connection", async(_req, res) => {
     try {
         const result = await pool.query("SELECT NOW()");
-        result && console.log("Postgres connection success!")
+        console.log("Postgres connection success!");
         res.json({
             message: "Postgres connection success!",
             time: result.rows[0]
