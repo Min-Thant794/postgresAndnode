@@ -4,7 +4,7 @@ import { getUsers, getUserById,createUser, updateUser, deleteUser } from "../con
 const router = express.Router();
 
 router.get("/get-users", getUsers);
-router.get("get-users/:id")
+router.get("get-users/:id", getUserById);
 router.post("/create-user", createUser);
 router.patch("/update-user/:id", updateUser);
 router.delete("/delete-user/:id", deleteUser);
