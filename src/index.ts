@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from "express";
 import pool from "./config/db";
+import userRoutes from "./routes/user.routes";
 
 const app = express();
 
@@ -37,5 +38,7 @@ const startServer = async() => {
         process.exit(1);
     }
 }
+
+app.use("/users", userRoutes);
 
 startServer();

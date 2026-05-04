@@ -5,7 +5,3 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
--- $$ => start
--- --text block
--- $$ => end
