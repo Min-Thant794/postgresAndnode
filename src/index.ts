@@ -4,8 +4,14 @@ dotenv.config();
 import express from "express";
 import pool from "./config/db";
 import userRoutes from "./routes/user.routes";
+import authRoutes from "./routes/auth.routes";
+import { sessionMiddleware } from "./config/session";
 
 const app = express();
+
+if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+}
 
 app.use(express.json());
 
@@ -39,6 +45,8 @@ const startServer = async() => {
     }
 }
 
+app.use(sessionMiddleware);
+app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 
 startServer();
