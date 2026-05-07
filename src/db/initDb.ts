@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import pool from "../config/db";
+import pool from "../db/pool";
 
 const initDb = async() => {
     try {

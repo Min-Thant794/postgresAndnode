@@ -1,10 +1,9 @@
 import { Request, Response } from "express";
-import { createUserService, deleteUserService, getUserByIdService, getUsersService, updateUserService } from "./user.service";
-import { validateCreateUser, validateUpdateUser, validateUpdatePassword, validateUserId } from "./user.validator";
+import { createUserService, deleteUserService, getUserByIdService, getUsersService, updateProfileService, updateEmailService, updatePasswordService } from "./user.service";
+import { validateCreateUser, validateUpdateProfile, validateUpdateEmail, validateUpdatePassword, validateUserId } from "./user.validator";
 import { AppError } from "../../types/errors";
 import { UserParams } from "../../types/user.types";
 import { clearSessionCookieOptions, SESSION_COOKIE_NAME } from "../../config/session";
-import { updatePasswordService } from "./user.service";
 
 const handleControllerError = (error: any, res: Response) => {
     if (error instanceof AppError) {
@@ -59,14 +58,41 @@ export const createUser = async (req: Request, res: Response) => {
     }
 };
 
-export const updateUser = async (req: Request<UserParams>, res: Response) => {
+export const updateProfile = async (req: Request<UserParams>, res: Response) => {
     try {
         const { id } = req.params;
         validateUserId(id);
-        const sanitizedUpdates = validateUpdateUser(req.body);
-        const user = await updateUserService(id, sanitizedUpdates);
+
+        if (req.session.userId !== id) {
+            throw new AppError(403, "you can only update your own profile");
+        }
+
+        const sanitizedUpdates = validateUpdateProfile(req.body);
+        const user = await updateProfileService(id, sanitizedUpdates);
+
         return res.status(200).json({
-            message: "user updated successfully",
+            message: "profile updated successfully",
+            data: user,
+        });
+    } catch (error: any) {
+        return handleControllerError(error, res);
+    }
+};
+
+export const updateEmail = async (req: Request<UserParams>, res: Response) => {
+    try {
+        const { id } = req.params;
+        validateUserId(id);
+
+        if (req.session.userId !== id) {
+            throw new AppError(403, "you can only update your own email");
+        }
+
+        const { email, currentPassword } = validateUpdateEmail(req.body);
+        const user = await updateEmailService(id, currentPassword, email);
+
+        return res.status(200).json({
+            message: "email updated successfully",
             data: user,
         });
     } catch (error: any) {

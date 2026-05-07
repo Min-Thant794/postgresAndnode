@@ -52,7 +52,7 @@ export const createUserService = async (input: CreateUserInput): Promise<PublicU
     }
 };
 
-export const updateUserService = async (id: string, sanitizedUpdates: Record<string, string>): Promise<PublicUser> => {
+export const updateProfileService = async (id: string, sanitizedUpdates: Record<string, string>): Promise<PublicUser> => {
     const keys = Object.keys(sanitizedUpdates);
     const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(", ");
     const values = [...keys.map((key) => sanitizedUpdates[key]), id];
@@ -64,27 +64,61 @@ export const updateUserService = async (id: string, sanitizedUpdates: Record<str
         RETURNING id, name, email, created_at, updated_at
     `;
 
-    try {
-        const result = await pool.query(query, values);
+    const result = await pool.query(query, values);
 
-        if (result.rows.length === 0) {
-            throw new AppError(404, "User not found");
-        }
-
-        return result.rows[0];
-    } catch (error: any) {
-        if (error.code === "23505") {
-            throw new AppError(409, "email already exists");
-        }
-        throw error;
+    if (result.rows.length === 0) {
+        throw new AppError(404, "User not found");
     }
+
+    return result.rows[0];
+};
+
+export const updateEmailService = async (id: string, currentPassword: string, newEmail: string): Promise<PublicUser> => {
+    const userResult = await pool.query(`
+            SELECT id, email, hashed_password
+            FROM users
+            WHERE id = $1
+        `);
+
+        if (userResult.rows.length === 0) {
+            throw new AppError(401, "User not found");
+        }
+
+        const user = userResult.rows[0];
+
+        const isValid = await verifyPassword(currentPassword, user.hashed_password);
+        if (!isValid) {
+            throw new AppError(401, "current password is incorrect");
+        }
+
+        if (user.email === newEmail) {
+            throw new AppError(400, "new email must differ from current email");
+        }
+
+        try {
+            const result = await pool.query(`
+                UPDATE users
+                SET email = $1
+                WHERE id = $2
+                RETURNING id, name, email, created_at, updated_at
+                `,
+                [newEmail, id]
+            );
+
+            return result.rows[0];
+        } catch (error: any) {
+            if (error.code === "23505") {
+                throw new AppError(409, "email already exists");
+            }
+            throw error;
+        }
 };
 
 export const updatePasswordService = async (id: string, currentPassword: string, newPassword: string): Promise<void> => {
     const query = `
-        SELECT id, hash_password 
+        SELECT id, hashed_password 
         FROM users 
-        WHERE id = &1
+        WHERE id = $1
         `
 
     const VALUE: string[] = [id];
@@ -98,7 +132,7 @@ export const updatePasswordService = async (id: string, currentPassword: string,
 
     const isValid = await verifyPassword(currentPassword, user.hashed_password);
     if (!isValid) {
-        throw new AppError(400, "New password must differ from current password");
+        throw new AppError(400, "current password is incorrect");
     }
 
     const sameAsOld = await verifyPassword(newPassword, user.hashed_password);
@@ -111,7 +145,7 @@ export const updatePasswordService = async (id: string, currentPassword: string,
     const VALUES: string[] = [newHash, id];
     const updateQuery = `
         UPDATE users
-        SET hashed_password = $1, updated_at = NOW()
+        SET hashed_password = $1, updated_at = NOW(), password_changed_at = NOW()
         WHERE id = $2
     `
     await pool.query(
