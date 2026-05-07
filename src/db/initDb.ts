@@ -4,11 +4,11 @@ import pool from "../config/db";
 
 const initDb = async() => {
     try {
-        const schemaDir = path.join(__dirname, "schema");
-        const files = fs.readdirSync(schemaDir).sort();
+        const migrationDir = path.join(__dirname, "migrations");
+        const files = fs.readdirSync(migrationDir).sort();
 
         for (const file of files) {
-            const filePath = path.join(schemaDir, file);
+            const filePath = path.join(migrationDir, file);
             const sql = fs.readFileSync(filePath, "utf-8");
 
             await pool.query(sql);

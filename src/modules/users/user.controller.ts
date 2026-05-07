@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { createUserService, deleteUserService, getUserByIdService, getUsersService, ServiceError, updateUserService } from "../services/user.service";
-import { UserParams } from "../types/user.types";
+import { createUserService, deleteUserService, getUserByIdService, getUsersService, ServiceError, updateUserService } from "./user.service";
+import { UserParams } from "../../types/user.types";
 
 const handleControllerError = (error: any, res: Response) => {
     if (error instanceof ServiceError) {

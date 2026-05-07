@@ -1,6 +1,6 @@
-import pool from "../config/db";
-import { CreateUserInput, PublicUser, UpdateUserInput } from "../types/user.types";
-import { hashPassword } from "../utils/password";
+import pool from "../../db/pool";
+import { CreateUserInput, PublicUser, UpdateUserInput } from "../../types/user.types";
+import { hashPassword } from "../../utils/password";
 
 export class ServiceError extends Error {
     statusCode: number;
@@ -70,7 +70,7 @@ export const getUserByIdService = async (id: string): Promise<PublicUser> => {
 export const createUserService = async (input: CreateUserInput): Promise<PublicUser> => {
     const name = normalizeName(input.name);
     const email = normalizeEmail(input.email);
-    const password = normalizePassword(input.password);
+    const password = normalizePassword(input.hashed_password);
 
     if (!name || !email || !password) {
         throw new ServiceError(400, "name, email, and password are requried");

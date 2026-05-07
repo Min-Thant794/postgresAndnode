@@ -17,7 +17,7 @@ export type UserWithPassword = PublicUser & {
 export type CreateUserInput = {
     name: string;
     email: string;
-    password: string;
+    hashed_password: string;
 };
 
 export type UpdateUserInput = {
@@ -27,5 +27,5 @@ export type UpdateUserInput = {
 
 export type LoginUserInput = {
     email: string;
-    password: string;
+    hashed_password: string;
 };

@@ -1,7 +1,7 @@
-import pool from "../config/db";
-import { LoginUserInput, PublicUser, UserWithPassword } from "../types/user.types";
-import { hashPassword, needsRehash, verifyPassword } from "../utils/password";
-import { isValidUUID, normalizeEmail, normalizePassword } from "./user.service";
+import pool from "../../db/pool";
+import { LoginUserInput, PublicUser, UserWithPassword } from "../../types/user.types";
+import { hashPassword, needsRehash, verifyPassword } from "../../utils/password";
+import { isValidUUID, normalizeEmail, normalizePassword } from "../users/user.service";
 
 export class AuthServiceError extends Error {
     statusCode: number;
@@ -15,7 +15,7 @@ export class AuthServiceError extends Error {
 
 export const loginUserService = async (input: LoginUserInput): Promise<PublicUser> => {
     const email = normalizeEmail(input.email);
-    const password = normalizePassword(input.password);
+    const password = normalizePassword(input.hashed_password);
 
     if (!email || !password) {
         throw new AuthServiceError(400, "email and password are required");

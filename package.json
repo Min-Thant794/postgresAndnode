@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:init": "ts-node src/db/initDb.ts",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/server.ts"
   },
   "keywords": [],
   "author": "",

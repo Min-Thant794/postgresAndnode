@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { ABSOLUTE_TIMEOUT_MS, clearSessionCookieOptions, IDLE_TIMEOUT_MS, SESSION_COOKIE_NAME} from "../config/session";
-import { AuthServiceError, getCurrentUserService, loginUserService } from "../services/auth.service";
+import { ABSOLUTE_TIMEOUT_MS, clearSessionCookieOptions, IDLE_TIMEOUT_MS, SESSION_COOKIE_NAME} from "../../config/session";
+import { AuthServiceError, getCurrentUserService, loginUserService } from "./auth.service";
 
 const setNoStoreHeaders = (res: Response) => {
     res.setHeader("Cache-Control", "no-store, private");
