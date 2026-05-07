@@ -1,7 +1,7 @@
 import pool from "../../db/pool";
 import { CreateUserInput, PublicUser } from "../../types/user.types";
 import { AppError } from "../../types/errors";
-import { hashPassword } from "../../utils/password";
+import { hashPassword, verifyPassword } from "../../utils/password";
 
 export const getUsersService = async (): Promise<PublicUser[]> => {
     const query = `
@@ -78,6 +78,45 @@ export const updateUserService = async (id: string, sanitizedUpdates: Record<str
         }
         throw error;
     }
+};
+
+export const updatePasswordService = async (id: string, currentPassword: string, newPassword: string): Promise<void> => {
+    const query = `
+        SELECT id, hash_password 
+        FROM users 
+        WHERE id = &1
+        `
+
+    const VALUE: string[] = [id];
+    const result = await pool.query(query, VALUE);
+
+    if (result.rows.length === 0) {
+        throw new AppError(404, "User not found");
+    }
+
+    const user = result.rows[0];
+
+    const isValid = await verifyPassword(currentPassword, user.hashed_password);
+    if (!isValid) {
+        throw new AppError(400, "New password must differ from current password");
+    }
+
+    const sameAsOld = await verifyPassword(newPassword, user.hashed_password);
+    if (sameAsOld) {
+        throw new AppError(400, "New password must differ from current password");
+    }
+
+    const newHash = await hashPassword(newPassword);
+
+    const VALUES: string[] = [newHash, id];
+    const updateQuery = `
+        UPDATE users
+        SET hashed_password = $1, updated_at = NOW()
+        WHERE id = $2
+    `
+    await pool.query(
+        updateQuery, VALUES
+    )
 };
 
 export const deleteUserService = async (id: string): Promise<{ id: string; name: string; email: string }> => {

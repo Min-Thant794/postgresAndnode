@@ -31,7 +31,7 @@ export function validateCreateUser(body: unknown): CreateUserInput {
 }
 
 export function validateUpdateUser(body: unknown): Record<string, string> {
-    const { name, email } = body as Record<string, unknown>;
+    const { name, email, hashed_password, password } = body as Record<string, unknown>;
     const updates: Record<string, string> = {};
 
     if (name !== undefined) {
@@ -46,9 +46,34 @@ export function validateUpdateUser(body: unknown): Record<string, string> {
         updates.email = normalized;
     }
 
+    if (hashed_password !== undefined || password !== undefined) {
+        throw new AppError(400, "pasword cannot be updated through this endpoint");
+    }
+
     if (Object.keys(updates).length === 0) {
         throw new AppError(400, "No valid fields provided for update");
     }
 
     return updates;
+}
+
+export function validateUpdatePassword(body: unknown): { currentPassword: string, newPassword: string} {
+    const { currentPassword, newPassword } = body as Record<string, unknown>;
+
+    if (!currentPassword || typeof currentPassword !== "string") {
+        throw new AppError(400, "current password is required");
+    }
+
+    if (!newPassword || typeof newPassword !== "string" || newPassword.length < 8) {
+        throw new AppError(400, "new password must be at least 8 characters");
+    }
+
+    if (currentPassword === newPassword) {
+        throw new AppError(400, "new password must differ from current password");
+    }
+
+    return {
+        currentPassword: normalizePassword(currentPassword),
+        newPassword: normalizePassword(newPassword)
+    };
 }

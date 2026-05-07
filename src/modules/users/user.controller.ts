@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import { createUserService, deleteUserService, getUserByIdService, getUsersService, updateUserService } from "./user.service";
-import { validateCreateUser, validateUpdateUser, validateUserId } from "./user.validator";
+import { validateCreateUser, validateUpdateUser, validateUpdatePassword, validateUserId } from "./user.validator";
 import { AppError } from "../../types/errors";
 import { UserParams } from "../../types/user.types";
+import { clearSessionCookieOptions, SESSION_COOKIE_NAME } from "../../config/session";
+import { updatePasswordService } from "./user.service";
 
 const handleControllerError = (error: any, res: Response) => {
     if (error instanceof AppError) {
@@ -71,6 +73,32 @@ export const updateUser = async (req: Request<UserParams>, res: Response) => {
         return handleControllerError(error, res);
     }
 };
+
+export const updatePassword = async (req: Request<UserParams>, res: Response) => {
+    try {
+        const { id } = req.params;
+        validateUserId(id);
+
+        if (req.session.userId !== id) {
+            throw new AppError(403, "you can only update your own password");
+        }
+
+        const { currentPassword, newPassword } = validateUpdatePassword(req.body);
+        await updatePasswordService(id, currentPassword, newPassword);
+
+        await new Promise<void>((resolve, reject) => {
+            req.session.destroy((err) => (err ? reject(err) : resolve()));
+        });
+
+        res.clearCookie(SESSION_COOKIE_NAME, clearSessionCookieOptions);
+
+        return res.status(200).json({
+            message: "password updated successfully. please log in again."
+        });
+    } catch (error: any) {
+        return handleControllerError(error, res);
+    }
+}
 
 export const deleteUser = async (req: Request<UserParams>, res: Response) => {
     try {

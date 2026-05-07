@@ -102,23 +102,7 @@ export const logoutUser = async (req: Request, res: Response) => {
 export const getMe = async (req: Request, res: Response) => {
     try {
         setNoStoreHeaders(res);
-
-        if (!req.session.userId) {
-            return res.status(401).json({ message: "Not authenticated" });
-        }
-
-        if (!req.session.absoluteExpiresAt || Date.now() > req.session.absoluteExpiresAt) {
-            try {
-                await destroySession(req);
-            } catch {
-                // ignore destroy failure; still clear the cookie
-            }
-            clearAuthCookie(res);
-            return res.status(401).json({ message: "Session expired. Please log in again." });
-        }
-
-        const user = await getCurrentUserService(req.session.userId);
-
+        const user = await getCurrentUserService(req.session.userId!);
         return res.status(200).json({
             message: "current user fetched successfully",
             data: user,
@@ -126,4 +110,4 @@ export const getMe = async (req: Request, res: Response) => {
     } catch (error) {
         return handleAuthError(error, res);
     }
-};
+}

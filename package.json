@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:init": "ts-node src/db/initDb.ts",
-    "dev": "ts-node src/server.ts"
+    "dev": "nodemon",
+    "start": "node dist/server.js",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +28,7 @@
     "@types/express-session": "^1.19.0",
     "@types/node": "^25.6.0",
     "@types/pg": "^8.20.0",
+    "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   }
