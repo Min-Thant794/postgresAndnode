@@ -1,8 +1,9 @@
+import { env } from "./env";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
-import pool from "./db";
+import pool from "../db/pool";
 
-export const isProduction = process.env.NODE_ENV === "production";
+export const isProduction = env.nodeEnv === "production";
 
 export const SESSION_COOKIE_NAME = "sid";
 export const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
@@ -14,7 +15,7 @@ export const ABSOLUTE_TIMEOUT_MS = 8 * 60 * 60 * 1000;
     if SESSION_SECRETS is missing, fallback to SESSOIN_SECRET.
 */
 
-const rawSecrets = process.env.SESSION_SECRETS ?? process.env.SESSION_SECRETS ?? "";
+const rawSecrets = env.sessionSecret ?? env.sessionSecret ?? "";
 
 const sessionSecrets = rawSecrets.split(",").map((value) => value.trim()).filter(Boolean);
 

@@ -1,6 +1,7 @@
 import * as argon2 from "argon2";
+import { env } from "../config/env";
 
-const PEPPER = process.env.PEPPER || "";
+const PEPPER = env.pepper || "";
 
 const HASH_OPTIONS: argon2.Options & { raw?: false } = {
     type: argon2.argon2id,

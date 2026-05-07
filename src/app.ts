@@ -1,4 +1,5 @@
 import express from "express";
+import { env } from "./config/env";
 import pool from "../src/db/pool";
 import { sessionMiddleware } from "./config/session";
 import userRoutes from "../src/modules/users/user.routes";
@@ -6,7 +7,7 @@ import authRoutes from "../src/modules/auth/auth.routes";
 
 const app = express();
 
-if (process.env.NODE_ENV === "production") {
+if (env.nodeEnv === "production") {
     app.set("trust proxy", 1);
 }
 
