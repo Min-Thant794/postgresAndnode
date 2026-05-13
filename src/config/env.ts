@@ -7,26 +7,45 @@ const required = (key: string): string => {
         throw new Error(`Missing required environment variable: ${key}`);
     }
     return value;
-}
+};
 
-function optional(key: string, fallback: string): string {
+const requiredOneof = (...keys: string[]): string => {
+    for (const key of keys) {
+        const value = process.env[key];
+        if (value) {
+            return value;
+        }
+    }
+    throw new Error(
+        `Missing required environment variable. Expected one of: ${keys.join(", ")}`
+    );
+};
+
+const optional = (key: string, fallback: string): string => {
     return process.env[key] ?? fallback;
+};
+
+const toNumber = (value: string, keyName: string): number => {
+    const parsed = Number(value);
+
+    if (Number.isNaN(parsed)) {
+        throw new Error(`Environment variable ${keyName} must be a valid number`);
+    }
+
+    return parsed;
 }
 
 export const env = {
     nodeEnv: optional("NODE_ENV", "development"),
-    port: Number(optional("PORT", "5050")),
+    port: toNumber(optional("PORT", "5050"), "PORT"),
 
-    //db
     pgUser: required("PGUSER"),
     pgPassword: required("PGPASSWORD"),
     pgHost: required("PGHOST"),
     pgDatabase: required("PGDATABASE"),
-    pgPort: Number(optional("PGPORT", "5432")),
+    pgPort: toNumber(optional("PGPORT", "5432"), "PGPPORT"),
 
-    //session
-    sessionSecret: required("SESSION_SECRETS"),
+    sessionSecret: requiredOneof("SESSION_SECRETS", "SESSION_SECRET"),
 
-    //auth
-    pepper: required("PEPPER")
-}
+    pepper: required("PEPPER"),
+};

@@ -1,6 +1,7 @@
 import { env } from "./env";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import type { Response } from "express";
 import pool from "../db/pool";
 
 export const isProduction = env.nodeEnv === "production";
@@ -9,18 +10,24 @@ export const SESSION_COOKIE_NAME = "sid";
 export const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
 export const ABSOLUTE_TIMEOUT_MS = 8 * 60 * 60 * 1000;
 
-/*
-    Real-world secret rotation:
-    SESSION_SECRETS=new-secret, old-secret-1, old-secret-2
-    if SESSION_SECRETS is missing, fallback to SESSOIN_SECRET.
-*/
+/**
+ * Real-world secret rotation:
+ * SESSION_SECRETS=new-secret,old-secret-1,old-secret-2
+ *
+ * Express can accept an array of secrets:
+ * - the first secret is used to sign new cookies
+ * - old secrets are still accepted for verifying existing cookies
+ */
 
-const rawSecrets = env.sessionSecret ?? env.sessionSecret ?? "";
+const rawSecrets = env.sessionSecret;
 
-const sessionSecrets = rawSecrets.split(",").map((value) => value.trim()).filter(Boolean);
+const sessionSecrets = rawSecrets
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
 
 if (sessionSecrets.length === 0) {
-    throw new Error (
+    throw new Error(
         "Missing SESSION_SECRET or SESSION_SECRETS in environment variables"
     );
 }
@@ -32,14 +39,16 @@ export const sessionCookieOptions: session.CookieOptions = {
     httpOnly: true,
     secure: isProduction,
     sameSite: "lax",
-    maxAge: IDLE_TIMEOUT_MS
+    maxAge: IDLE_TIMEOUT_MS,
 };
 
-export const clearSessionCookieOptions = {
+type ClearCookieOptions = NonNullable<Parameters<Response["clearCookie"]>[1]>;
+
+export const clearSessionCookieOptions: ClearCookieOptions = {
     path: "/",
     httpOnly: true,
     secure: isProduction,
-    sameSite: "lax" as const
+    sameSite: "lax",
 };
 
 export const sessionMiddleware = session({
@@ -49,20 +58,19 @@ export const sessionMiddleware = session({
         pool,
         tableName: "user_sessions",
 
-        //Real-world preference;
-        // -dev: okay to auto-create
-        // -prod: use your own SQL migration instead
-        createTableIfMissing: false || !isProduction,
+        // Dev: okay to auto-create
+        // Prod: prefer SQL migrations
+        createTableIfMissing: !isProduction,
 
-        // Keep DB session TTL refreshed while the user is active
+        // Keep DB session TTL refreshed while user is active
         disableTouch: false,
 
         // Prune expired sessions every 15 minutes
-        pruneSessionInterval: 60 * 15
+        pruneSessionInterval: 60 * 15,
     }),
     resave: false,
     saveUninitialized: false,
     rolling: true,
     unset: "destroy",
-    cookie: sessionCookieOptions
+    cookie: sessionCookieOptions,
 });
