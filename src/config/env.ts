@@ -43,7 +43,7 @@ export const env = {
     pgPassword: required("PGPASSWORD"),
     pgHost: required("PGHOST"),
     pgDatabase: required("PGDATABASE"),
-    pgPort: toNumber(optional("PGPORT", "5432"), "PGPPORT"),
+    pgPort: toNumber(optional("PGPORT", "5432"), "PGPORT"),
 
     sessionSecret: requiredOneof("SESSION_SECRETS", "SESSION_SECRET"),
 
