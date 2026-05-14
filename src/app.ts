@@ -4,6 +4,7 @@ import pool from "../src/db/pool";
 import { sessionMiddleware } from "./config/session";
 import userRoutes from "../src/modules/users/user.routes";
 import authRoutes from "../src/modules/auth/auth.routes";
+import { apiLimiter } from "./middleware/rateLimiter";
 
 const app = express();
 
@@ -12,6 +13,7 @@ if (env.nodeEnv === "production") {
 }
 
 app.use(express.json());
+app.use(apiLimiter);
 app.use(sessionMiddleware);
 
 app.get("/test-connection", async (_req, res) => {

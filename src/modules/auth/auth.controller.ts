@@ -86,14 +86,14 @@ export const logoutUser = async (req: Request, res: Response) => {
 
         if (!req.session) {
             clearAuthCookie(res);
-            return res.status(204).send();
+            return res.status(204).end();
         }
 
         await destroySession(req);
         clearAuthCookie(res);
         res.setHeader("Clear-Site-Data", '"cache", "cookies", "storage"');
 
-        return res.status(204).send();
+        return res.status(204).end();
     } catch (error) {
         return handleAuthError(error, res);
     }

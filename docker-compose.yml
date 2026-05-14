@@ -13,7 +13,8 @@ services:
       PGHOST: postgres
       PGDATABASE: ${PGDATABASE}
       PGPORT: 5432
-      PEPPER: ${PEPPER}
+      PEPPER_V1: ${PEPPER_V1}
+      PEPPER_V2: ${PEPPER_V2:-}
       SESSION_SECRETS: ${SESSION_SECRETS}
       NODE_ENV: ${NODE_ENV}
     depends_on:
