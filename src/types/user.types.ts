@@ -1,6 +1,6 @@
 export type UserParams = {
     id: string;
-};
+}
 
 export type PublicUser = {
     id: string;
@@ -12,7 +12,7 @@ export type PublicUser = {
 
 export type UserWithPassword = PublicUser & {
     hashed_password: string;
-}
+};
 
 export type CreateUserInput = {
     name: string;
@@ -23,9 +23,9 @@ export type CreateUserInput = {
 export type UpdateUserInput = {
     name?: string;
     email?: string;
-}
+};
 
 export type LoginUserInput = {
     email: string;
-    hashed_password: string;
+    password: string;
 };

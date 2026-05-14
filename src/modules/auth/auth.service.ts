@@ -16,14 +16,14 @@ export const loginUserService = async (input: LoginUserInput): Promise<PublicUse
 
     const user = result.rows[0] as UserWithPassword;
 
-    const isPasswordValid = await verifyPassword(input.hashed_password, user.hashed_password);
+    const isPasswordValid = await verifyPassword(input.password, user.hashed_password);
 
     if (!isPasswordValid) {
         throw new AppError(401, "Invalid email or password");
     }
 
     if (needsRehash(user.hashed_password)) {
-        const newHash = await hashPassword(input.hashed_password);
+        const newHash = await hashPassword(input.password);
         await pool.query(
             `UPDATE users SET hashed_password = $1 WHERE id = $2`,
             [newHash, user.id]

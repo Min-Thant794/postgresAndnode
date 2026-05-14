@@ -102,7 +102,11 @@ export const logoutUser = async (req: Request, res: Response) => {
 export const getMe = async (req: Request, res: Response) => {
     try {
         setNoStoreHeaders(res);
-        const user = await getCurrentUserService(req.session.userId!);
+        const userId = req.session.userId;
+        if (!userId) {
+            throw new AppError(401, "Not authenticated");
+        }
+        const user = await getCurrentUserService(userId);
         return res.status(200).json({
             message: "current user fetched successfully",
             data: user,

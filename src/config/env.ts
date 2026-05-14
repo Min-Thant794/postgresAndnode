@@ -47,5 +47,6 @@ export const env = {
 
     sessionSecret: requiredOneof("SESSION_SECRETS", "SESSION_SECRET"),
 
-    pepper: required("PEPPER"),
+    pepperV1: required("PEPPER_V1"),
+    pepperV2: required("PEPPER_V2")
 };

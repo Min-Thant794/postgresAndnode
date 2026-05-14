@@ -10,4 +10,4 @@ export const normalizeEmail = (email: unknown): string =>
     String(email ?? "").trim().toLowerCase();
 
 export const normalizePassword = (password: unknown): string =>
-    String(password ?? "").trim();
+    typeof password === "string" ? password: "";

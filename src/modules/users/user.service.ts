@@ -78,7 +78,7 @@ export const updateEmailService = async (id: string, currentPassword: string, ne
             SELECT id, email, hashed_password
             FROM users
             WHERE id = $1
-        `);
+        `, [id]);
 
         if (userResult.rows.length === 0) {
             throw new AppError(401, "User not found");
