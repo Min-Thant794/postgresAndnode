@@ -1,11 +1,18 @@
+export type UserRole = "user" | "admin";
+
 export type UserParams = {
     id: string;
-}
+};
 
 export type PublicUser = {
     id: string;
     name: string;
     email: string;
+    role: UserRole;
+    is_active: boolean;
+    profile_url: string | null;
+    birthday: string | null;
+    email_verified_at: string | null;
     created_at: string;
     updated_at: string;
 };
@@ -17,15 +24,18 @@ export type UserWithPassword = PublicUser & {
 export type CreateUserInput = {
     name: string;
     email: string;
-    hashed_password: string;
+    password: string;
+    profile_url?: string;
+    birthday?: string;
 };
 
 export type UpdateUserInput = {
     name?: string;
-    email?: string;
+    profile_url?: string | null;
+    birthday?: string | null;
 };
 
 export type LoginUserInput = {
     email: string;
     password: string;
-};
+}

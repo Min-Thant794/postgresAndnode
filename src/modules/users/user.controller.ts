@@ -3,7 +3,6 @@ import { createUserService, deleteUserService, getUserByIdService, getUsersServi
 import { validateCreateUser, validateUpdateProfile, validateUpdateEmail, validateUpdatePassword, validateUserId } from "./user.validator";
 import { AppError } from "../../types/errors";
 import { UserParams } from "../../types/user.types";
-import { clearSessionCookieOptions, SESSION_COOKIE_NAME } from "../../config/session";
 
 const handleControllerError = (error: any, res: Response) => {
     if (error instanceof AppError) {
@@ -61,13 +60,28 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request<UserParams>, res: Response) => {
     try {
         const { id } = req.params;
-        validateUserId(id);
+        const { name, profile_url, birthday } = req.body;
 
-        if (req.session.userId !== id) {
-            throw new AppError(403, "you can only update your own profile");
+        const sanitizedUpdates: Record<string, string | null> = {};
+
+        if (name !== undefined) {
+            sanitizedUpdates.name = String(name).trim();
         }
 
-        const sanitizedUpdates = validateUpdateProfile(req.body);
+        if (profile_url !== undefined) {
+            sanitizedUpdates.profile_url = profile_url;
+        }
+
+        if (birthday !== undefined) {
+            sanitizedUpdates.birthday = birthday;
+        }
+
+        if (Object.keys(sanitizedUpdates).length === 0) {
+            return res.status(400).json({
+                message: "No valid fields provided for update"
+            });
+        }
+
         const user = await updateProfileService(id, sanitizedUpdates);
 
         return res.status(200).json({
@@ -82,13 +96,14 @@ export const updateProfile = async (req: Request<UserParams>, res: Response) => 
 export const updateEmail = async (req: Request<UserParams>, res: Response) => {
     try {
         const { id } = req.params;
-        validateUserId(id);
+        const { email, currentPassword } = req.body;
 
-        if (req.session.userId !== id) {
-            throw new AppError(403, "you can only update your own email");
-        }
+        if (!email || !currentPassword) {
+            return res.status(400).json({
+                message: "email and currentPassword are required"
+            });
+        };
 
-        const { email, currentPassword } = validateUpdateEmail(req.body);
         const user = await updateEmailService(id, currentPassword, email);
 
         return res.status(200).json({
@@ -103,23 +118,18 @@ export const updateEmail = async (req: Request<UserParams>, res: Response) => {
 export const updatePassword = async (req: Request<UserParams>, res: Response) => {
     try {
         const { id } = req.params;
-        validateUserId(id);
+        const { currentPassword, newPassword } = req.body;
 
-        if (req.session.userId !== id) {
-            throw new AppError(403, "you can only update your own password");
-        }
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                message: "currentPassword and newPassword are requried"
+            });
+        };
 
-        const { currentPassword, newPassword } = validateUpdatePassword(req.body);
         await updatePasswordService(id, currentPassword, newPassword);
 
-        await new Promise<void>((resolve, reject) => {
-            req.session.destroy((err) => (err ? reject(err) : resolve()));
-        });
-
-        res.clearCookie(SESSION_COOKIE_NAME, clearSessionCookieOptions);
-
         return res.status(200).json({
-            message: "password updated successfully. please log in again."
+            message: "password updated successfully",
         });
     } catch (error: any) {
         return handleControllerError(error, res);
