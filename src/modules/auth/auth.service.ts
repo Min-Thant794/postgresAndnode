@@ -3,6 +3,12 @@ import { LoginUserInput, PublicUser, UserWithPassword } from "../../types/user.t
 import { AppError } from "../../types/errors";
 import { isValidUUID } from "../../utils/normalize";
 import { hashPassword, needsRehash, verifyPassword } from "../../utils/password";
+import { PUBLIC_COLUMNS } from "../users/user.service";
+
+const toPublicUser = (user: UserWithPassword): PublicUser => {
+    const { hashed_password: _hashedPassword, ...publicUser } = user;
+    return publicUser;
+};
 
 export const loginUserService = async (input: LoginUserInput): Promise<PublicUser> => {
     const result = await pool.query(
@@ -22,6 +28,10 @@ export const loginUserService = async (input: LoginUserInput): Promise<PublicUse
         throw new AppError(401, "Invalid email or password");
     }
 
+    if (!user.is_active) {
+        throw new AppError(403, "Account is disabled");
+    }
+
     if (needsRehash(user.hashed_password)) {
         const newHash = await hashPassword(input.password);
         await pool.query(
@@ -30,13 +40,7 @@ export const loginUserService = async (input: LoginUserInput): Promise<PublicUse
         );
     }
 
-    return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-    };
+    return toPublicUser(user);
 };
 
 export const getCurrentUserService = async (userId: string): Promise<PublicUser> => {

@@ -2,22 +2,31 @@ import pool from "../../db/pool";
 import { CreateUserInput, PublicUser } from "../../types/user.types";
 import { AppError } from "../../types/errors";
 import { hashPassword, verifyPassword } from "../../utils/password";
-import { normalizeName, normalizeEmail, normalizePassword, isValidUUID } from "../../utils/normalize";
+import { isValidUUID } from "../../utils/normalize";
 
 export const PUBLIC_COLUMNS = `
-    id, name, email, role, is_active, 
+    id, name, email, 
     profile_url, birthday, email_verified_at, 
     created_at, updated_at
 `;
 
+const assertValidUserId = (id: string): void => {
+    if (!isValidUUID(id)) {
+        throw new AppError(400, "Invalid user id");
+    };
+};
+
+const isUniqueViolation = (error: unknown): boolean => {
+    return typeof error === "object" && error !== null && "code" in error &&
+    (error as { code?: unknown }).code === "23505";
+}
+
 export const getUsersService = async (): Promise<PublicUser[]> => {
-    const query = `
+    const result = await pool.query(`
         SELECT ${PUBLIC_COLUMNS}
         FROM users
         ORDER BY created_at DESC
-    `;
-
-    const result = await pool.query(query);
+    `);
 
     if (result.rows.length === 0) {
         throw new AppError(404, "No user available");
@@ -27,6 +36,8 @@ export const getUsersService = async (): Promise<PublicUser[]> => {
 };
 
 export const getUserByIdService = async (id: string): Promise<PublicUser> => {
+    assertValidUserId(id);
+    
     const query = `
         SELECT ${PUBLIC_COLUMNS}
         FROM users
@@ -58,8 +69,8 @@ export const createUserService = async (input: CreateUserInput): Promise<PublicU
     try {
         const result = await pool.query(query, values);
         return result.rows[0];
-    } catch (error: any) {
-        if (error.code === "23505") {
+    } catch (error) {
+        if (isUniqueViolation(error)) {
             throw new AppError(409, "email already exists");
         }
         throw error;
@@ -67,9 +78,7 @@ export const createUserService = async (input: CreateUserInput): Promise<PublicU
 };
 
 export const updateProfileService = async (id: string, sanitizedUpdates: Record<string, string | null>): Promise<PublicUser> => {
-    if (!isValidUUID(id)) {
-        throw new AppError(400, "Invalid user id");
-    }
+    assertValidUserId(id);
 
     const keys = Object.keys(sanitizedUpdates);
     const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(", ");
@@ -92,9 +101,7 @@ export const updateProfileService = async (id: string, sanitizedUpdates: Record<
 };
 
 export const updateEmailService = async (id: string, currentPassword: string, newEmail: string): Promise<PublicUser> => {
-    if (!isValidUUID(id)) {
-        throw new AppError(400, "Invalid user id");
-    }
+    assertValidUserId(id);
     
     const userResult = await pool.query(`
         SELECT id, email, hashed_password, is_active
@@ -134,8 +141,8 @@ export const updateEmailService = async (id: string, currentPassword: string, ne
         );
 
         return result.rows[0];
-    } catch (error: any) {
-        if (error.code === "23505") {
+    } catch (error) {
+        if (isUniqueViolation(error)) {
             throw new AppError(409, "email already exists");
         }
         throw error;
@@ -143,15 +150,13 @@ export const updateEmailService = async (id: string, currentPassword: string, ne
 };
 
 export const updatePasswordService = async (id: string, currentPassword: string, newPassword: string): Promise<void> => {
-    if (!isValidUUID(id)) {
-        throw new AppError(400, "Invalid user id");
-    }
+    assertValidUserId(id);
 
     const VALUE: string[] = [id];
     
     const query = `
         SELECT id, hashed_password, is_active
-        FROM users 
+        FROM users
         WHERE id = $1
         `;
 
@@ -195,16 +200,12 @@ export const updatePasswordService = async (id: string, currentPassword: string,
 };
 
 export const deleteUserService = async (id: string): Promise<{ id: string; name: string; email: string }> => {
-    if (!isValidUUID(id)) {
-        throw new AppError(400, "Invalid user id");
-    }
+    assertValidUserId(id);
 
-    const value: string[] = [id];
-    
     const result = await pool.query(
         `DELETE FROM users WHERE id = $1 
         RETURNING id, name, email`,
-        value
+        [id]
     );
 
     if (result.rows.length === 0) {

@@ -5,7 +5,7 @@ import { sessionMiddleware } from "./config/session";
 import userRoutes from "./modules/users/user.routes";
 import authRoutes from "./modules/auth/auth.routes";
 import { apiLimiter } from "./middleware/rateLimiter";
-import { AppError } from "./types/errors";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
 const app = express();
 
@@ -18,38 +18,24 @@ app.use(apiLimiter);
 app.use(sessionMiddleware);
 
 if (env.nodeEnv !== "production") {
-    app.get("/test-connection", async (_req, res) => {
+    app.get("/test-connection", async (_req, res, next) => {
         try {
             const result = await pool.query("SELECT NOW()");
             res.json({ message: "Postgres conneciton success!", time: result.rows[0] });
         } catch (error) {
-            res.status(500).json({
-                message: "Failed to connect",
-                error: "DB error"
-            });
+            next(error);
         };
     });
 }
 
+app.use((req, res, next) => {
+    console.log(`[REQUEST] ${req.method} ${req.url}`);
+    next();
+})
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 
-app.use((_req, res) => {
-    res.status(404).json({
-        message: "Not found"
-    });
-});
-
-app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    if (err instanceof AppError) {
-        return res.status(err.statusCode).json({ 
-            message: err.message 
-        });
-    }
-    console.error("Unhandled error:", err);
-    return res.status(500).json({ 
-        message: "Internal server error" 
-    });
-});
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;

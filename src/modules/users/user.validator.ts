@@ -1,9 +1,17 @@
-import { z } from "zod";
+import { z, ZodType } from "zod";
 import { CreateUserInput } from "../../types/user.types";
 import { AppError } from "../../types/errors";
 import { isValidUUID, normalizeName, normalizeEmail, normalizePassword } from "../../utils/normalize";
 
-const createUserSchema = z.object({
+const parseOrThrow = <T>(schema: ZodType<T>, body: unknown): T => {
+    const result = schema.safeParse(body);
+    if (!result.success) {
+        throw new AppError(400, result.error.issues[0].message);
+    }
+    return result.data;
+};
+
+const createUserSchema = z.strictObject({
     name: z.string({ error: "name is required" }).min(1, "name is required").transform(normalizeName),
     email: z.email("valid email is required").transform(normalizeEmail),
     password: z.string({ error: "password must be at least 8 characters" }).min(8, "password must be at least 8 characters").transform(normalizePassword),
@@ -11,7 +19,7 @@ const createUserSchema = z.object({
     birthday: z.iso.date({ error: "birthday must use YYYY-MM-DD format" }).optional(),
 });
 
-const updateProfileSchema = z.object({
+const updateProfileSchema = z.strictObject({
     email: z.undefined({ error: "email cannot be updated through this endpoint" }),
     hashed_password: z.undefined({ error: "password cannot be updated through this endpoint" }),
     password: z.undefined({ error: "password cannot be updated through this endpoint" }),
@@ -21,12 +29,12 @@ const updateProfileSchema = z.object({
     birthday: z.iso.date({error: "birthday must use YYYY-MM-DD format"}).nullable().optional(),
 }).strip();
 
-const updateEmailSchema = z.object({
+const updateEmailSchema = z.strictObject({
     email: z.email("valid email is required").transform(normalizeEmail),
     currentPassword: z.string({ error: "current password is required" }).min(1, "current password is required").transform(normalizePassword),
 });
 
-const updatePasswordSchema = z.object({
+const updatePasswordSchema = z.strictObject({
     currentPassword: z.string({ error: "current password is required" }).min(1, "current password is required"),
     newPassword: z.string({ error: "new password must be at least 8 characters" }).min(8, "new password must be at least 8 characters"),
 }).refine((data) => data.currentPassword !== data.newPassword, {
@@ -44,34 +52,24 @@ export function validateUserId(id: string): void {
 }
 
 export function validateCreateUser(body: unknown): CreateUserInput {
-    const result = createUserSchema.safeParse(body);
-    if (!result.success) {
-        const message = result.error.issues[0].message;
-        throw new AppError(400, message);
-    }
-    return result.data;
+    return parseOrThrow(createUserSchema, body);
 }
 
 export function validateUpdateProfile(body: unknown): Record<string, string | null> {
-    const result = updateProfileSchema.safeParse(body);
-    
-    if (!result.success) {
-        const message = result.error.issues[0].message;
-        throw new AppError(400, message);
-    }
+    const data = parseOrThrow(updateProfileSchema, body);
 
     const updates: Record<string, string | null> = {};
 
-    if (result.data.name !== undefined) {
-        updates.name = result.data.name;
+    if (data.name !== undefined) {
+        updates.name = data.name;
     }
 
-    if (result.data.profile_url !== undefined) {
-        updates.profile_url = result.data.profile_url;
+    if (data.profile_url !== undefined) {
+        updates.profile_url = data.profile_url;
     }
 
-    if (result.data.birthday !== undefined) {
-        updates.birthday = result.data.birthday;
+    if (data.birthday !== undefined) {
+        updates.birthday = data.birthday;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -82,19 +80,9 @@ export function validateUpdateProfile(body: unknown): Record<string, string | nu
 }
 
 export function validateUpdateEmail(body: unknown): { email: string; currentPassword: string } {
-    const result = updateEmailSchema.safeParse(body);
-    if (!result.success) {
-        const message = result.error.issues[0].message;
-        throw new AppError(400, message);
-    }
-    return result.data;
+    return parseOrThrow(updateEmailSchema, body);
 }
 
 export function validateUpdatePassword(body: unknown): { currentPassword: string; newPassword: string } {
-    const result = updatePasswordSchema.safeParse(body);
-    if (!result.success) {
-        const message = result.error.issues[0].message;
-        throw new AppError(400, message);
-    }
-    return result.data;
+    return parseOrThrow(updatePasswordSchema, body);
 }

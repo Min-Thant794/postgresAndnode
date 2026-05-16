@@ -1,33 +1,11 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { ABSOLUTE_TIMEOUT_MS, IDLE_TIMEOUT_MS } from "../../config/session";
 import { AppError } from "../../types/errors";
 import { getCurrentUserService, loginUserService } from "./auth.service";
 import { validateLogin } from "./auth.validator";
 import { clearAuthCookie, destroySession, regenerateSession, saveSession, setNoStoreHeaders } from "../../utils/sessionHelpers";
 
-const handleAuthError = (error: unknown, res: Response) => {
-    if (error instanceof AppError) {
-        return res.status(error.statusCode).json({
-            message: error.message
-        });
-    };
-
-    if (typeof error === "object" &&
-        error !== null &&
-        (error as { code?: string }).code === "42601"
-    ) {
-        return res.status(500).json({
-            message: "sql syntax error"
-        });
-    }
-
-    console.error("Auth controller error: ", error);
-    return res.status(500).json({
-        message: "Internal server error"
-    });
-};
-
-export const loginUser = async (req: Request, res: Response) => {
+export const loginUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         setNoStoreHeaders(res);
 
@@ -49,13 +27,18 @@ export const loginUser = async (req: Request, res: Response) => {
             data: user,
         });
     } catch (error) {
-        return handleAuthError(error, res);
+        return next(error);
     };
 };
 
-export const logoutUser = async (req: Request, res: Response) => {
+export const logoutUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         setNoStoreHeaders(res);
+
+        if (!req.session) {
+            clearAuthCookie(res);
+            return res.status(204).end;
+        }
 
         await destroySession(req);
         clearAuthCookie(res);
@@ -63,11 +46,11 @@ export const logoutUser = async (req: Request, res: Response) => {
 
         return res.status(204).end();
     } catch (error) {
-        return handleAuthError(error, res);
+        return next(error);
     }
 };
 
-export const getMe = async (req: Request, res: Response) => {
+export const getMe = async (req: Request, res: Response, next: NextFunction) => {
     try {
         setNoStoreHeaders(res);
         const userId = req.session.userId;
@@ -80,6 +63,6 @@ export const getMe = async (req: Request, res: Response) => {
             data: user,
         });
     } catch (error) {
-        return handleAuthError(error, res);
+        return next(error);
     }
 };

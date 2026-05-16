@@ -1,13 +1,13 @@
 import type { Request, Response } from "express";
 import { clearSessionCookieOptions, SESSION_COOKIE_NAME } from "../config/session";
 
-export const setNoStoreHeaders = (res: Response) => {
+export const setNoStoreHeaders = (res: Response): void => {
     res.setHeader("Cache-Control", "no-store, private");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
 };
 
-export const clearAuthCookie = (res: Response) => {
+export const clearAuthCookie = (res: Response): void => {
     res.clearCookie(SESSION_COOKIE_NAME, clearSessionCookieOptions);
 };
 
