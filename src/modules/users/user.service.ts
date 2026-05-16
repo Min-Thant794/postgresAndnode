@@ -27,10 +27,6 @@ export const getUsersService = async (): Promise<PublicUser[]> => {
 };
 
 export const getUserByIdService = async (id: string): Promise<PublicUser> => {
-    if (!isValidUUID) {
-        throw new AppError(400, "Invalid user id");
-    }
-
     const query = `
         SELECT ${PUBLIC_COLUMNS}
         FROM users
@@ -47,19 +43,7 @@ export const getUserByIdService = async (id: string): Promise<PublicUser> => {
 };
 
 export const createUserService = async (input: CreateUserInput): Promise<PublicUser> => {
-    const name = normalizeName(input.name);
-    const email = normalizeEmail(input.email);
-    const password = normalizePassword(input.password);
-    
-    if (!name || !email || !password) {
-        throw new AppError(400, "name, email, and password are required");
-    }
-
-    if (password.length < 8) {
-        throw new AppError(400, "password must be at least 8 characters");
-    }
-
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPassword(input.password);
 
     const query = `
         INSERT INTO users (name, email, hashed_password, profile_url, birthday)
@@ -68,7 +52,7 @@ export const createUserService = async (input: CreateUserInput): Promise<PublicU
     `;
 
     const values = [
-        name, email, hashedPassword, input.profile_url ?? null, input.birthday ?? null,
+        input.name, input.email, hashedPassword, input.profile_url ?? null, input.birthday ?? null,
     ];
 
     try {

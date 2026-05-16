@@ -60,6 +60,7 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request<UserParams>, res: Response) => {
     try {
         const { id } = req.params;
+        validateUserId(id);
         const { name, profile_url, birthday } = req.body;
 
         const sanitizedUpdates: Record<string, string | null> = {};

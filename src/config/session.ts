@@ -8,24 +8,22 @@ export const isProduction = env.nodeEnv === "production";
 
 export const SESSION_COOKIE_NAME: string = "sid";
 export const IDLE_TIMEOUT_MS: number = 15 * 60 * 1000;
-export const ABSOLUTE_TIMEOUT_MS: number = 8 * 60 * 60 * 1000;
+export const ABSOLUTE_TIMEOUT_MS: number = 5 * 60 * 60 * 1000;
 
 /**
- * Real-world secret rotation:
- * SESSION_SECRETS=new-secret,old-secret-1,old-secret-2
- *
+ * Real-world secret rotation
+ * SESSION_SECRETS=new-secret, old-secret-1, old-secret-2
+ * 
  * Express can accept an array of secrets:
  * - the first secret is used to sign new cookies
  * - old secrets are still accepted for verifying existing cookies
  */
 
-const rawSecrets: string = env.sessionSecret;
-
-const sessionSecrets = rawSecrets.split(",").map((value) => value.trim()).filter(Boolean);
+const sessionSecrets = env.sessionSecret.split(",").map((value) => value.trim()).filter(Boolean);
 
 if (sessionSecrets.length === 0) {
-    throw new Error ("Missing SESSION_SECRET or SESSION_SECRETS in environment variables");
-};
+    throw new Error("Missing SESSION_SECRET or SESSION_SECRETS in environment variables");
+}
 
 const pgStore = connectPgSimple(session);
 
@@ -52,15 +50,8 @@ export const sessionMiddleware = session({
     store: new pgStore({
         pool,
         tableName: "user_sessions",
-
-        // Dev: okay to auto-create
-        // Prod: prefer SQL migrations
         createTableIfMissing: !isProduction,
-
-        // Keep DB session TTL refreshed while user is active
         disableTouch: false,
-
-        // Prune expired sessions every 15 minutes
         pruneSessionInterval: 60 * 15,
     }),
     resave: false,

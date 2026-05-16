@@ -3,11 +3,14 @@ export const isValidUUID = (value: string): boolean => {
     return uuidRegex.test(value);
 };
 
-export const normalizeName = (name: unknown): string =>
-    String(name ?? "").trim();
+export const normalizeName = (name: unknown): string => {
+    return String(name ?? "").trim();
+}
 
-export const normalizeEmail = (email: unknown): string =>
-    String(email ?? "").trim().toLowerCase();
+export const normalizeEmail = (email: unknown): string => {
+    return String(email ?? "").trim().toLowerCase();
+}
 
-export const normalizePassword = (password: unknown): string =>
-    typeof password === "string" ? password: "";
+export const normalizePassword = (password: string): string => {
+    return typeof password === "string" ? password: "";
+}

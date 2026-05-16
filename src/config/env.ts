@@ -14,26 +14,24 @@ const requiredOneof = (...keys: string[]): string => {
         const value = process.env[key];
         if (value) {
             return value;
-        }
-    }
-    throw new Error(
-        `Missing required environment variable. Expected one of: ${keys.join(", ")}`
-    );
+        };
+    };
+    throw new Error(`Missing required environment variable. Expected one of: ${keys.join(", ")}`);
 };
 
 const optional = (key: string, fallback: string): string => {
     return process.env[key] ?? fallback;
-};
+}
 
 const toNumber = (value: string, keyName: string): number => {
     const parsed = Number(value);
 
     if (Number.isNaN(parsed)) {
         throw new Error(`Environment variable ${keyName} must be a valid number`);
-    }
+    };
 
     return parsed;
-}
+};
 
 export const env = {
     nodeEnv: optional("NODE_ENV", "development"),
@@ -48,5 +46,7 @@ export const env = {
     sessionSecret: requiredOneof("SESSION_SECRETS", "SESSION_SECRET"),
 
     pepperV1: required("PEPPER_V1"),
-    pepperV2: required("PEPPER_V2")
+    // Optional — only present during a pepper rotation. password.ts enforces
+    // the 32-byte minimum when v2 is actually requested.
+    pepperV2: optional("PEPPER_V2", ""),
 };

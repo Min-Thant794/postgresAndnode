@@ -1,4 +1,9 @@
-CREATE TYPE user_role AS ENUM ('user', 'admin');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typename = 'user_role') THEN
+        CREATE TYPE user_role AS ENUM ('user', 'admin');
+    END IF;
+END$$;
 
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -15,6 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
     profile_url TEXT,
     birthday DATE,
 
+    email_verified_at TIMESTAMPTZ,
     password_changed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
