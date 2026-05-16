@@ -3,7 +3,6 @@ import { LoginUserInput, PublicUser, UserWithPassword } from "../../types/user.t
 import { AppError } from "../../types/errors";
 import { isValidUUID } from "../../utils/normalize";
 import { hashPassword, needsRehash, verifyPassword } from "../../utils/password";
-import { PUBLIC_COLUMNS } from "../users/user.service";
 
 const toPublicUser = (user: UserWithPassword): PublicUser => {
     const { hashed_password: _hashedPassword, ...publicUser } = user;
