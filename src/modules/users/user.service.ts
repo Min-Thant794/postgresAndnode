@@ -1,4 +1,6 @@
 import pool from "../../db/pool";
+import { uploadImageToCloudinary, deleteImageFromCloudinary } from "../../services/cloudinary.service";
+import { cloudinaryFolders } from "../../utils/cloudinaryFolders";
 import { CreateUserInput, PublicUser } from "../../types/user.types";
 import { AppError } from "../../types/errors";
 import { hashPassword, verifyPassword } from "../../utils/password";
@@ -6,7 +8,7 @@ import { isValidUUID } from "../../utils/normalize";
 
 export const PUBLIC_COLUMNS = `
     id, name, email, 
-    profile_url, birthday, email_verified_at, 
+    profile_image_url, birthday, email_verified_at, 
     created_at, updated_at
 `;
 
@@ -53,22 +55,47 @@ export const getUserByIdService = async (id: string): Promise<PublicUser> => {
     return result.rows[0];
 };
 
-export const createUserService = async (input: CreateUserInput): Promise<PublicUser> => {
+export const createUserService = async (input: CreateUserInput, fileBuffer?: Buffer): Promise<PublicUser> => {
     const hashedPassword = await hashPassword(input.password);
 
     const query = `
-        INSERT INTO users (name, email, hashed_password, profile_url, birthday)
+        INSERT INTO users (name, email, hashed_password, profile_image_url, birthday)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING ${PUBLIC_COLUMNS}
     `;
 
     const values = [
-        input.name, input.email, hashedPassword, input.profile_url ?? null, input.birthday ?? null,
+        input.name, input.email, hashedPassword, input.profile_image_url ?? null, input.birthday ?? null,
     ];
 
     try {
         const result = await pool.query(query, values);
-        return result.rows[0];
+        const createdUser = result.rows[0];
+
+        if (!fileBuffer) {
+            return createdUser;
+        }
+
+        const uploadedImage = await uploadImageToCloudinary({
+            buffer: fileBuffer,
+            folder: cloudinaryFolders.userProfile(createdUser.id),
+        });
+
+        const VALUES = [uploadedImage.secure_url, uploadedImage.public_id, createdUser.id];
+
+        const updatedUserResult = await pool.query(
+            `
+            UPDATE users
+            SET profile_image_url = $1,
+                profile_image_public_id = $2,
+                updated_at = NOW()
+            WHERE id = $3
+            RETURNING ${PUBLIC_COLUMNS}
+            `,
+            VALUES
+        );
+
+        return updatedUserResult.rows[0];
     } catch (error) {
         if (isUniqueViolation(error)) {
             throw new AppError(409, "email already exists");

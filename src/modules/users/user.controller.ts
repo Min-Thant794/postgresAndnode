@@ -32,10 +32,8 @@ export const getUserById = async (req: Request<UserParams>, res: Response, next:
 
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        console.log("REQ BODY: ", req.body);
         const input = validateCreateUser(req.body);
-        console.log("VALIDATED INPUT: ", input);
-        const user = await createUserService(input);
+        const user = await createUserService(input, req.file?.buffer);
         return res.status(201).json({
             message: "user created successfully",
             data: user,

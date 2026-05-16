@@ -11,7 +11,9 @@ const toPublicUser = (user: UserWithPassword): PublicUser => {
 
 export const loginUserService = async (input: LoginUserInput): Promise<PublicUser> => {
     const result = await pool.query(
-        `SELECT id, name, email, hashed_password, created_at, updated_at FROM users WHERE email = $1`,
+        `SELECT id, name, email, hashed_password, role, is_active, created_at, updated_at 
+        FROM users 
+        WHERE email = $1`,
         [input.email]
     );
 

@@ -31,7 +31,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
             `
             SELECT password_changed_at 
             FROM users 
-            WHERE id = $1,
+            WHERE id = $1
             `,
             [req.session.userId]
         );

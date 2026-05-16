@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS users (
     failed_login_attempts INT NOT NULL DEFAULT 0,
     locked_until TIMESTAMPTZ,
 
-    profile_url TEXT,
+    profile_image_url TEXT,
+    profile_image_public_id TEXT,
     birthday DATE,
 
     email_verified_at TIMESTAMPTZ,
@@ -30,7 +31,7 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT users_email_lowercase CHECK(email = LOWER(email)),
     CONSTRAINT users_password_min_length CHECK (char_length(hashed_password) >= 60),
     CONSTRAINT users_failed_attempts_range CHECK (failed_login_attempts >= 0),
-    CONSTRAINT users_profile_url_format CHECK (profile_url IS NULL OR profile_url ~* '^https?://'),
+    CONSTRAINT users_profile_image_url_format CHECK (profile_image_url IS NULL OR profile_image_url ~* '^https?://'),
     CONSTRAINT users_birthday_not_future CHECK (birthday IS NULL OR birthday <= CURRENT_DATE),
     CONSTRAINT users_birthday_min_age CHECK (birthday IS NULL OR birthday <= CURRENT_DATE - INTERVAL '13 years')
 );

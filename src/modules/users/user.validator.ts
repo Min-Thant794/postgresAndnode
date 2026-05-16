@@ -15,7 +15,7 @@ const createUserSchema = z.strictObject({
     name: z.string({ error: "name is required" }).min(1, "name is required").transform(normalizeName),
     email: z.email("valid email is required").transform(normalizeEmail),
     password: z.string({ error: "password must be at least 8 characters" }).min(8, "password must be at least 8 characters").transform(normalizePassword),
-    profile_url: z.url({ error: "profile_url must be a valid URL" }).optional(),
+    profile_image_url: z.url({ error: "profile_image_url must be a valid URL" }).optional(),
     birthday: z.iso.date({ error: "birthday must use YYYY-MM-DD format" }).optional(),
 });
 
@@ -25,7 +25,7 @@ const updateProfileSchema = z.strictObject({
     password: z.undefined({ error: "password cannot be updated through this endpoint" }),
     currentPassword: z.undefined({ error: "password cannot be updated through this endpoint" }),
     name: z.string().min(1, "name cannot be empty").transform(normalizeName).optional(),
-    profile_url: z.url({ error: "profile_url must be a valid URL" }).nullable().optional(),
+    profile_image_url: z.url({ error: "profile_image_url must be a valid URL" }).nullable().optional(),
     birthday: z.iso.date({error: "birthday must use YYYY-MM-DD format"}).nullable().optional(),
 }).strip();
 
@@ -64,8 +64,8 @@ export function validateUpdateProfile(body: unknown): Record<string, string | nu
         updates.name = data.name;
     }
 
-    if (data.profile_url !== undefined) {
-        updates.profile_url = data.profile_url;
+    if (data.profile_image_url !== undefined) {
+        updates.profile_image_url = data.profile_image_url;
     }
 
     if (data.birthday !== undefined) {

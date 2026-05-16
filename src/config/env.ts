@@ -49,4 +49,7 @@ export const env = {
     // Optional — only present during a pepper rotation. password.ts enforces
     // the 32-byte minimum when v2 is actually requested.
     pepperV2: optional("PEPPER_V2", ""),
+    cloudinaryKeyName: required("CLOUDINARY_KEY_NAME"),
+    cloudinaryApiKey: required("CLOUDINARY_API_KEY"),
+    cloudinaryApiSecret: required("CLOUDINARY_API_SECRET")
 };

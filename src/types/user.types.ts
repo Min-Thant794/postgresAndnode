@@ -10,7 +10,7 @@ export type PublicUser = {
     email: string;
     role: UserRole;
     is_active: boolean;
-    profile_url: string | null;
+    profile_image_url: string | null;
     birthday: string | null;
     email_verified_at: string | null;
     created_at: string;
@@ -25,13 +25,13 @@ export type CreateUserInput = {
     name: string;
     email: string;
     password: string;
-    profile_url?: string;
+    profile_image_url?: string;
     birthday?: string;
 };
 
 export type UpdateUserInput = {
     name?: string;
-    profile_url?: string | null;
+    profile_image_url?: string | null;
     birthday?: string | null;
 };
 
