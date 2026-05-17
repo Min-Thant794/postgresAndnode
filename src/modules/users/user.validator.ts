@@ -20,10 +20,6 @@ const createUserSchema = z.strictObject({
 });
 
 const updateProfileSchema = z.strictObject({
-    email: z.undefined({ error: "email cannot be updated through this endpoint" }),
-    hashed_password: z.undefined({ error: "password cannot be updated through this endpoint" }),
-    password: z.undefined({ error: "password cannot be updated through this endpoint" }),
-    currentPassword: z.undefined({ error: "password cannot be updated through this endpoint" }),
     name: z.string().min(1, "name cannot be empty").transform(normalizeName).optional(),
     profile_image_url: z.url({ error: "profile_image_url must be a valid URL" }).nullable().optional(),
     birthday: z.iso.date({error: "birthday must use YYYY-MM-DD format"}).nullable().optional(),
@@ -55,7 +51,7 @@ export function validateCreateUser(body: unknown): CreateUserInput {
     return parseOrThrow(createUserSchema, body);
 }
 
-export function validateUpdateProfile(body: unknown): Record<string, string | null> {
+export function validateUpdateProfile(body: unknown, options: { allowEmpty?: boolean } = {}): Record<string, string | null> {
     const data = parseOrThrow(updateProfileSchema, body);
 
     const updates: Record<string, string | null> = {};
@@ -72,7 +68,7 @@ export function validateUpdateProfile(body: unknown): Record<string, string | nu
         updates.birthday = data.birthday;
     }
 
-    if (Object.keys(updates).length === 0) {
+    if (Object.keys(updates).length === 0 && !options.allowEmpty) {
         throw new AppError(400, "No valid fields provided for update");
     }
 

@@ -104,27 +104,80 @@ export const createUserService = async (input: CreateUserInput, fileBuffer?: Buf
     }
 };
 
-export const updateProfileService = async (id: string, sanitizedUpdates: Record<string, string | null>): Promise<PublicUser> => {
+export const updateProfileService = async (id: string, sanitizedUpdates: Record<string, string | null>, fileBuffer?: Buffer): Promise<PublicUser> => {
     assertValidUserId(id);
 
-    const keys = Object.keys(sanitizedUpdates);
-    const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(", ");
-    const values: (string | null)[] = [...keys.map((key) => sanitizedUpdates[key]), id];
+    if (Object.keys(sanitizedUpdates).length === 0 && !fileBuffer) {
+        throw new AppError(400, "No valid fields provided for update");
+    }
 
-    const query = `
-        UPDATE users
-        SET ${setClause}
-        WHERE id = $${values.length}
-        RETURNING ${PUBLIC_COLUMNS}
-    `;
+    const existingUserResult = await pool.query(
+        `
+        SELECT id, profile_image_public_id
+        FROM users
+        WHERE id = $1
+        `,
+        [id]
+    );
 
-    const result = await pool.query(query, values);
-
-    if (result.rows.length === 0) {
+    if (existingUserResult.rows.length === 0) {
         throw new AppError(404, "User not found");
     }
 
-    return result.rows[0];
+    const existingUser = existingUserResult.rows[0] as {
+        id: string;
+        profile_image_public_id: string | null;
+    };
+
+    let uploadedImagePublicId: string | null = null;
+
+    try {
+        if (fileBuffer) {
+            const uploadedImage = await uploadImageToCloudinary({
+                buffer: fileBuffer,
+                folder: cloudinaryFolders.userProfile(id),
+            });
+
+            sanitizedUpdates.profile_image_url = uploadedImage.secure_url;
+            sanitizedUpdates.profile_image_public_id = uploadedImage.public_id;
+
+            uploadedImagePublicId = uploadedImage.public_id;
+        };
+
+        const keys = Object.keys(sanitizedUpdates);
+
+        const setClause = keys.map((key, index) => `${key} = $${index + 1}`);
+
+        const values: (string | null)[] = [
+            ...keys.map((key) => sanitizedUpdates[key]),
+            id,
+        ];
+
+        const query = `
+            UPDATE users
+            SET ${setClause}, updated_at = NOW()
+            WHERE id = $${values.length}
+            RETURNING ${PUBLIC_COLUMNS}
+        `;
+
+        const result = await pool.query(query, values);
+
+        if (result.rows.length === 0) {
+            throw new AppError(404, "User not found");
+        }
+
+        if (fileBuffer && existingUser.profile_image_public_id) {
+            await deleteImageFromCloudinary(existingUser.profile_image_public_id);
+        }
+
+        return result.rows[0];
+    } catch (error) {
+        if (uploadedImagePublicId) {
+            await deleteImageFromCloudinary(uploadedImagePublicId);
+        }
+
+        throw error;
+    }
 };
 
 export const updateEmailService = async (id: string, currentPassword: string, newEmail: string): Promise<PublicUser> => {
@@ -239,5 +292,23 @@ export const deleteUserService = async (id: string): Promise<{ id: string; name:
         throw new AppError(404, "User not found");
     }
 
-    return result.rows[0];
+    const deletedUser = result.rows[0] as {
+        id: string;
+        name: string;
+        email: string;
+        profile_image_public_id: string | null;
+    }
+
+    if (deletedUser.profile_image_public_id) {
+        try {
+            await deleteImageFromCloudinary(deletedUser.profile_image_public_id);
+        } catch (error) {
+            console.error("Failed to delete profile image from Cloudinary: ", error);
+        }
+    }
+    return {
+        id: deletedUser.id,
+        name: deletedUser.name,
+        email: deletedUser.email,
+    };
 };

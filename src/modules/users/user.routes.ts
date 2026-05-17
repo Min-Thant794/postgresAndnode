@@ -10,7 +10,7 @@ router.post("/create-user", authLimiter, uploadImage.single("profileImage"), cre
 
 router.get("/get-users", requireAuth, getUsers);
 router.get("/get-user/:id", requireAuth, getUserById);
-router.patch("/update-profile/:id", requireAuth, updateProfile);
+router.patch("/update-profile/:id", requireAuth, uploadImage.single("profileImage"), updateProfile);
 router.patch("/update-email/:id", requireAuth, updateEmail);
 router.patch("/update-password/:id", requireAuth, updatePassword);
 router.delete("/delete-user/:id", requireAuth, deleteUser);

@@ -21,7 +21,7 @@ export const uploadImageToCloudinary = ({
                     return reject(error);
                 }
                 if (!result) {
-                    return (new Error("Cloudinary upload failed"));
+                    return reject(new Error("Cloudinary upload failed"));
                 }
 
                 resolve(result);

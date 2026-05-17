@@ -47,8 +47,10 @@ export const updateProfile = async (req: Request<UserParams>, res: Response, nex
     try {
         const { id } = req.params;
         validateUserId(id);
-        const updates = validateUpdateProfile(req.body);
-        const user = await updateProfileService(id, updates);
+        const updates = validateUpdateProfile(req.body, {
+            allowEmpty: Boolean(req.file),
+        });
+        const user = await updateProfileService(id, updates, req.file?.buffer);
         return res.status(200).json({
             message: "profile updated successfully",
             data: user,
