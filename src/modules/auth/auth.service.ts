@@ -21,7 +21,13 @@ export const loginUserService = async (input: LoginUserInput): Promise<PublicUse
         throw new AppError(401, "Invalid email or password");
     }
 
-    const user = result.rows[0] as UserWithPassword;
+    const user = result.rows[0] as UserWithPassword & {
+        hashed_password: string | null;
+    };
+
+    if (!user.hashed_password) {
+        throw new AppError(400, "This account uses Google login. Please continue with Google.");
+    }
 
     const isPasswordValid = await verifyPassword(input.password, user.hashed_password);
 

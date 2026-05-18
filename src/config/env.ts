@@ -51,5 +51,8 @@ export const env = {
     pepperV2: optional("PEPPER_V2", ""),
     cloudinaryKeyName: required("CLOUDINARY_KEY_NAME"),
     cloudinaryApiKey: required("CLOUDINARY_API_KEY"),
-    cloudinaryApiSecret: required("CLOUDINARY_API_SECRET")
+    cloudinaryApiSecret: required("CLOUDINARY_API_SECRET"),
+    googleClientId: required("GOOGLE_CLIENT_ID"),
+    googleClientSecret: required("GOOGLE_CLIENT_SECRET"),
+    googleCallbackUrl: required("GOOGLE_CALLBACK_URL")
 };

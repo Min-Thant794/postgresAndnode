@@ -146,7 +146,7 @@ export const updateProfileService = async (id: string, sanitizedUpdates: Record<
 
         const keys = Object.keys(sanitizedUpdates);
 
-        const setClause = keys.map((key, index) => `${key} = $${index + 1}`);
+        const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(", ");
 
         const values: (string | null)[] = [
             ...keys.map((key) => sanitizedUpdates[key]),
@@ -197,6 +197,10 @@ export const updateEmailService = async (id: string, currentPassword: string, ne
 
     if (!user.is_active) {
         throw new AppError(403, "Account is disabled");
+    }
+
+    if (!user.hashed_password) {
+        throw new AppError(400, "This account uses Google login. Please set a password before changing email.");
     }
 
     const isValid = await verifyPassword(currentPassword, user.hashed_password);
@@ -252,6 +256,10 @@ export const updatePasswordService = async (id: string, currentPassword: string,
         throw new AppError(403, "Account is disabled");
     }
 
+    if (!user.hashed_password) {
+        throw new AppError(400, "This account uses Google login. Please create a password first.");
+    }
+
     const isValid = await verifyPassword(currentPassword, user.hashed_password);
     
     if (!isValid) {
@@ -284,7 +292,7 @@ export const deleteUserService = async (id: string): Promise<{ id: string; name:
 
     const result = await pool.query(
         `DELETE FROM users WHERE id = $1 
-        RETURNING id, name, email`,
+        RETURNING id, name, email, profile_image_public_id`,
         [id]
     );
 
