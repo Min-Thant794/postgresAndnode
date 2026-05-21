@@ -18,8 +18,12 @@ CREATE TABLE IF NOT EXISTS oauth_accounts (
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
+    CONSTRAINT oauth_accounts_provider_not_empty
+        CHECK (char_length(TRIM(provider)) > 0),
     CONSTRAINT oauth_accounts_provider_user_id_not_empty
-    CHECK (provider, provider_user_id)
+        CHECK (char_length(TRIM(provider_user_id) > 0)),
+    CONSTRAINT oauth_accounts_provider_user_id_unique
+        UNIQUE (provider, provider_user_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_oauth_accounts_user_id

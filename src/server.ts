@@ -9,7 +9,7 @@ const startServer = async () => {
 
         const server = app.listen(env.port, () => {
             console.log(`Server is listening at http://localhost:${env.port}`);
-            console.log(`http://localhost:${env.port}/text-connection`);
+            console.log(`http://localhost:${env.port}/test-connection`);
         });
 
         const shutdown = (signal: string) => {

@@ -1,9 +1,9 @@
-import express, { NextFunction, Request, Response } from "express";
+import express from "express";
 import { env } from "./config/env";
-import pool from "./db/pool";
 import { sessionMiddleware } from "./config/session";
 import userRoutes from "./modules/users/user.routes";
 import authRoutes from "./modules/auth/auth.routes";
+import devRoutes from "./modules/dev/dev.routes";
 import { apiLimiter } from "./middleware/rateLimiter";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
@@ -17,21 +17,15 @@ app.use(express.json({ limit: "100kb" }));
 app.use(apiLimiter);
 app.use(sessionMiddleware);
 
-if (env.nodeEnv !== "production") {
-    app.get("/test-connection", async (_req, res, next) => {
-        try {
-            const result = await pool.query("SELECT NOW()");
-            res.json({ message: "Postgres conneciton success!", time: result.rows[0] });
-        } catch (error) {
-            next(error);
-        };
-    });
-}
-
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
     console.log(`[REQUEST] ${req.method} ${req.url}`);
     next();
-})
+});
+
+if (env.nodeEnv !== "production") {
+    app.use(devRoutes);
+}
+
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 

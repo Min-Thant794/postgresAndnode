@@ -7,8 +7,8 @@ import { hashPassword, verifyPassword } from "../../utils/password";
 import { isValidUUID } from "../../utils/normalize";
 
 export const PUBLIC_COLUMNS = `
-    id, name, email, 
-    profile_image_url, birthday, email_verified_at, 
+    id, name, email,
+    profile_image_url, birthday, email_verified_at,
     created_at, updated_at
 `;
 
@@ -39,13 +39,13 @@ export const getUsersService = async (): Promise<PublicUser[]> => {
 
 export const getUserByIdService = async (id: string): Promise<PublicUser> => {
     assertValidUserId(id);
-    
+
     const query = `
         SELECT ${PUBLIC_COLUMNS}
         FROM users
         WHERE id = $1
     `;
-    
+
     const result = await pool.query(query, [id]);
 
     if (result.rows.length === 0) {
@@ -74,7 +74,7 @@ export const createUserService = async (input: CreateUserInput, fileBuffer?: Buf
 
         if (!fileBuffer) {
             return createdUser;
-        }
+        };
 
         const uploadedImage = await uploadImageToCloudinary({
             buffer: fileBuffer,
@@ -104,6 +104,15 @@ export const createUserService = async (input: CreateUserInput, fileBuffer?: Buf
     }
 };
 
+const PROFILE_UPDATE_ALLOWED_COLUMNS = [
+    "name",
+    "profile_image_url",
+    "profile_image_public_id",
+    "birthday",
+] as const;
+
+type ProfileUpdateColumn = typeof PROFILE_UPDATE_ALLOWED_COLUMNS[number];
+
 export const updateProfileService = async (id: string, sanitizedUpdates: Record<string, string | null>, fileBuffer?: Buffer): Promise<PublicUser> => {
     assertValidUserId(id);
 
@@ -129,6 +138,7 @@ export const updateProfileService = async (id: string, sanitizedUpdates: Record<
         profile_image_public_id: string | null;
     };
 
+    const updates: Record<string, string | null> = { ...sanitizedUpdates };
     let uploadedImagePublicId: string | null = null;
 
     try {
@@ -138,18 +148,21 @@ export const updateProfileService = async (id: string, sanitizedUpdates: Record<
                 folder: cloudinaryFolders.userProfile(id),
             });
 
-            sanitizedUpdates.profile_image_url = uploadedImage.secure_url;
-            sanitizedUpdates.profile_image_public_id = uploadedImage.public_id;
+            updates.profile_image_url = uploadedImage.secure_url;
+            updates.profile_image_public_id = uploadedImage.public_id;
 
             uploadedImagePublicId = uploadedImage.public_id;
-        };
+        }
 
-        const keys = Object.keys(sanitizedUpdates);
+        const keys = Object.keys(updates).filter(
+            (key): key is ProfileUpdateColumn =>
+                (PROFILE_UPDATE_ALLOWED_COLUMNS as readonly string[]).includes(key)
+        );
 
         const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(", ");
 
         const values: (string | null)[] = [
-            ...keys.map((key) => sanitizedUpdates[key]),
+            ...keys.map((key) => updates[key]),
             id,
         ];
 
@@ -182,11 +195,11 @@ export const updateProfileService = async (id: string, sanitizedUpdates: Record<
 
 export const updateEmailService = async (id: string, currentPassword: string, newEmail: string): Promise<PublicUser> => {
     assertValidUserId(id);
-    
+
     const userResult = await pool.query(`
         SELECT id, email, hashed_password, is_active
         FROM users
-        WHERE id = $1
+        WHERE id = $1    
     `, [id]);
 
     if (userResult.rows.length === 0) {
@@ -212,7 +225,7 @@ export const updateEmailService = async (id: string, currentPassword: string, ne
         throw new AppError(400, "new email must differ from current email");
     }
 
-    const vaules: string[] = [newEmail, id];
+    const values: string[] = [newEmail, id];
 
     try {
         const result = await pool.query(`
@@ -220,8 +233,7 @@ export const updateEmailService = async (id: string, currentPassword: string, ne
             SET email = $1
             WHERE id = $2
             RETURNING ${PUBLIC_COLUMNS}
-            `,
-            vaules
+        `,values
         );
 
         return result.rows[0];
@@ -236,15 +248,14 @@ export const updateEmailService = async (id: string, currentPassword: string, ne
 export const updatePasswordService = async (id: string, currentPassword: string, newPassword: string): Promise<void> => {
     assertValidUserId(id);
 
-    const VALUE: string[] = [id];
-    
-    const query = `
+    const result = await pool.query(
+        `
         SELECT id, hashed_password, is_active
         FROM users
         WHERE id = $1
-        `;
-
-    const result = await pool.query(query, VALUE);
+        `,
+        [id]
+    );
 
     if (result.rows.length === 0) {
         throw new AppError(404, "User not found");
@@ -257,42 +268,42 @@ export const updatePasswordService = async (id: string, currentPassword: string,
     }
 
     if (!user.hashed_password) {
-        throw new AppError(400, "This account uses Google login. Please create a password first.");
+        throw new AppError(403, "This account uses Google login. Please create a password first.");
     }
 
     const isValid = await verifyPassword(currentPassword, user.hashed_password);
-    
+
     if (!isValid) {
         throw new AppError(400, "current password is incorrect");
     }
 
     const sameAsOld = await verifyPassword(newPassword, user.hashed_password);
-    
+
     if (sameAsOld) {
         throw new AppError(400, "New password must differ from current password");
     }
 
     const newHash = await hashPassword(newPassword);
 
-    const VALUES: string[] = [newHash, id];
-
-    const updateQuery = `
+    await pool.query(
+        `
         UPDATE users
         SET hashed_password = $1, updated_at = NOW(), password_changed_at = NOW()
         WHERE id = $2
-    `;
-
-    await pool.query(
-        updateQuery, VALUES
-    )
+        `,
+        [newHash, id]
+    );
 };
 
-export const deleteUserService = async (id: string): Promise<{ id: string; name: string; email: string }> => {
+export const deleteUserService = async (id: string): Promise<{ id: string; name: string; email: string;}> => {
     assertValidUserId(id);
 
-    const result = await pool.query(
-        `DELETE FROM users WHERE id = $1 
-        RETURNING id, name, email, profile_image_public_id`,
+    const result = await pool.query(    
+        `
+        DELETE FROM users
+        WHERE id = $1
+        RETURNING id, name. email, profile_image_public_id
+        `,
         [id]
     );
 

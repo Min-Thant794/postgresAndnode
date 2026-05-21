@@ -44,7 +44,7 @@ export const findOrCreateGoogleUserService = async (input: GoogleProfileInput): 
         const createdUserResult = await client.query(
             `
             INSERT INTO users (
-                name, email, hashed_password, profile_image_url, email_verified_at, is_active
+                name, email, profile_image_url, email_verified_at, is_active
             )
             VALUES ($1, $2, $3, NOW(), TRUE)
             RETURNING id, name, email, profile_image_url, birthday, email_verified_at, created_at, updated_at

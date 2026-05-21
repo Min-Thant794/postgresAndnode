@@ -1,15 +1,8 @@
-import { z, ZodType } from "zod";
+import { z } from "zod";
 import { CreateUserInput } from "../../types/user.types";
 import { AppError } from "../../types/errors";
-import { isValidUUID, normalizeName, normalizeEmail, normalizePassword } from "../../utils/normalize";
-
-const parseOrThrow = <T>(schema: ZodType<T>, body: unknown): T => {
-    const result = schema.safeParse(body);
-    if (!result.success) {
-        throw new AppError(400, result.error.issues[0].message);
-    }
-    return result.data;
-};
+import { normalizeName, normalizeEmail, normalizePassword } from "../../utils/normalize";
+import { parseOrThrow } from "../../utils/validation";
 
 const createUserSchema = z.strictObject({
     name: z.string({ error: "name is required" }).min(1, "name is required").transform(normalizeName),
@@ -40,12 +33,6 @@ const updatePasswordSchema = z.strictObject({
     currentPassword: normalizePassword(data.currentPassword),
     newPassword: normalizePassword(data.newPassword),
 }));
-
-export function validateUserId(id: string): void {
-    if (!isValidUUID(id)) {
-        throw new AppError(400, "Invalid user id");
-    }
-}
 
 export function validateCreateUser(body: unknown): CreateUserInput {
     return parseOrThrow(createUserSchema, body);

@@ -12,5 +12,5 @@ export const normalizeEmail = (email: unknown): string => {
 }
 
 export const normalizePassword = (password: string): string => {
-    return typeof password === "string" ? password: "";
+    return password;
 }

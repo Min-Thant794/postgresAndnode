@@ -6,7 +6,7 @@ const isPgError = (error: unknown): error is { code: string } =>
     typeof (error as { code: unknown }).code === "string";
 
 export const notFoundHandler = (_req: Request, res: Response) => {
-    res.status(400).json({
+    res.status(404).json({
         message: "Route not found"
     });
 };
